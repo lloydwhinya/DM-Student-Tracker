@@ -69,7 +69,11 @@ label{display:block;margin:10px 0 4px;color:var(--ink);font-size:13px;font-weigh
 .admin-toolbar{margin-bottom:18px}
 .admin-toolbar>input{flex:1;min-width:180px;width:auto}
 .admin-toolbar>select{width:auto;min-width:140px}
+.cohort-section{margin-top:20px}
+.cohort-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:10px 14px;border-left:4px solid var(--ac);border-radius:8px;background:var(--blue-soft);font-size:20px}
+.cohort-heading span{display:grid;min-width:30px;height:30px;place-items:center;padding:0 8px;border-radius:15px;background:#fff;color:var(--ac);font-family:"DM Sans",sans-serif;font-size:13px;font-weight:700}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:16px;margin-top:14px}
+.cohort-section .grid{margin-top:0}
 .card{min-width:0;padding:17px;border:1px solid var(--line);border-top:3px solid var(--ac);border-radius:10px;background:#fff;box-shadow:0 1px 3px rgba(20,45,103,.04);cursor:pointer;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
 .card:nth-child(4n+2){border-top-color:#627bd0}.card:nth-child(4n+3){border-top-color:var(--gold)}.card:nth-child(4n){border-top-color:#328b78}
 .card:hover{transform:translateY(-2px);box-shadow:0 6px 15px rgba(20,45,103,.09)}
@@ -107,6 +111,7 @@ label{display:block;margin:10px 0 4px;color:var(--ink);font-size:13px;font-weigh
 	.admin-toolbar>input{flex-basis:100%}
 	.admin-toolbar>select{flex:1}
 	.grid{grid-template-columns:minmax(0,1fr);gap:12px}
+	.cohort-heading{font-size:19px}
 	.panel{padding:18px}
 	.iv{grid-template-columns:repeat(2,minmax(0,1fr))}
 }

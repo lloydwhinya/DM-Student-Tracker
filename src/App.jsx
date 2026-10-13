@@ -132,33 +132,56 @@ function StudentForm({ initial, isAdmin, onDone }) {
 }
 
 function Admin() {
-  const [list, setList] = useState([]); const [q, setQ] = useState(''); const [fs, setFs] = useState('')
+  const [list, setList] = useState([]); const [q, setQ] = useState(''); const [fs, setFs] = useState(''); const [fc, setFc] = useState('')
   const [editing, setEditing] = useState(null)
   const load = () => supabase.from('students').select('*').order('name').then(r => setList(r.data || []))
   useEffect(() => { load() }, [])
   if (editing) return <StudentForm initial={editing} isAdmin onDone={d => { setEditing(null); d && load() }} />
+  const cohortOf = s => (s.cohort || '').trim()
+  const compareCohorts = (a, b) => {
+    if (!a) return b ? 1 : 0
+    if (!b) return -1
+    const aIsYear = /^\d{4}$/.test(a)
+    const bIsYear = /^\d{4}$/.test(b)
+    if (aIsYear && bIsYear) return Number(b) - Number(a)
+    if (aIsYear) return -1
+    if (bIsYear) return 1
+    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+  }
   const today = new Date().toISOString().slice(0, 10)
   const emp = list.filter(s => s.status === 'Employed').length
   const ready = list.filter(s => s.status !== 'Enrolled').length
   const upcoming = list.flatMap(s => s.interviews || []).filter(i => i.date >= today && i.outcome !== 'Rejected').length
-  const shown = list.filter(s => (!fs || s.status === fs) && (!q || JSON.stringify(s).toLowerCase().includes(q.toLowerCase())))
+  const cohorts = [...new Set(list.map(cohortOf).filter(Boolean))].sort(compareCohorts)
+  const shown = list.filter(s => (!fs || s.status === fs) && (!fc || cohortOf(s) === fc) && (!q || JSON.stringify(s).toLowerCase().includes(q.toLowerCase())))
+  const groups = new Map()
+  shown.forEach(s => {
+    const cohort = cohortOf(s)
+    if (!groups.has(cohort)) groups.set(cohort, [])
+    groups.get(cohort).push(s)
+  })
+  const shownGroups = [...groups.entries()].sort(([a], [b]) => compareCohorts(a, b))
   return (<>
     <div className="stats">{[[list.length, 'Students'], [list.filter(s => s.status === 'Interviewing').length, 'Interviewing'], [upcoming, 'Upcoming interviews'], [emp, 'Employed'], [ready ? Math.round(emp / ready * 100) + '%' : '–', 'Placement rate']].map(([n, l]) => <div className="stat" key={l}><b>{n}</b><span>{l}</span></div>)}</div>
     <div className="row admin-toolbar"><input style={{ flex: 1, minWidth: 180 }} placeholder="Search name, skill, employer, cohort" value={q} onChange={e => setQ(e.target.value)} />
       <select style={{ width: 'auto' }} value={fs} onChange={e => setFs(e.target.value)}><option value="">All statuses</option>{STATUSES.map(x => <option key={x}>{x}</option>)}</select>
+      <select aria-label="Filter by cohort" style={{ width: 'auto' }} value={fc} onChange={e => setFc(e.target.value)}><option value="">All cohorts</option>{cohorts.map(x => <option key={x} value={x}>{x} Cohort</option>)}</select>
       <button className="p" onClick={() => setEditing({ id: crypto.randomUUID(), user_id: null })}>Add student</button></div>
-    <div className="grid">
-      {shown.map(s => <div className="card" key={s.id} onClick={() => setEditing(s)}>
-        <div className="row">{photoUrl(s.photo_path) ? <img className="av" src={photoUrl(s.photo_path)} alt="" /> : <div className="av">{initials(s.name)}</div>}
-          <div><b>{s.name}</b><div className="mu">{s.cohort} {s.email}</div></div></div>
-        <span className={`tag status-tag status-${s.status.toLowerCase().replace(/[^a-z]+/g, '-')}`}>{s.status}</span>{(s.skills || []).map(k => <span className="tag" key={k}>{k}</span>)}
-        {s.employer && <div className="mu" style={{ marginTop: 8 }}>{s.job_title} {s.job_title && 'at'} {s.employer}</div>}
-        <div className="mu card-links" style={{ marginTop: 6 }}>
-          {s.portfolio && <a className="card-link" href={link(s.portfolio)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>Portfolio</a>}
-          {s.linkedin && <a href={link(s.linkedin)} target="_blank" rel="noopener" onClick={e => e.stopPropagation()}>LinkedIn </a>}
-          {s.cv_path && <a href="#" onClick={e => { e.preventDefault(); e.stopPropagation(); openCv(s.cv_path) }}>CV</a>}</div>
-      </div>)}
-    </div>
+    {shownGroups.map(([cohort, students]) => <section className="cohort-section" key={cohort || 'unassigned'}>
+      <h2 className="cohort-heading">{cohort ? `${cohort} Cohort` : 'Cohort not set'}<span>{students.length}</span></h2>
+      <div className="grid">
+        {students.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })).map(s => <div className="card" key={s.id} onClick={() => setEditing(s)}>
+          <div className="row">{photoUrl(s.photo_path) ? <img className="av" src={photoUrl(s.photo_path)} alt="" /> : <div className="av">{initials(s.name)}</div>}
+            <div><b>{s.name}</b><div className="mu">{s.email}</div></div></div>
+          <span className={`tag status-tag status-${s.status.toLowerCase().replace(/[^a-z]+/g, '-')}`}>{s.status}</span>{(s.skills || []).map(k => <span className="tag" key={k}>{k}</span>)}
+          {s.employer && <div className="mu" style={{ marginTop: 8 }}>{s.job_title} {s.job_title && 'at'} {s.employer}</div>}
+          <div className="mu card-links" style={{ marginTop: 6 }}>
+            {s.portfolio && <a className="card-link" href={link(s.portfolio)} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>Portfolio</a>}
+            {s.linkedin && <a href={link(s.linkedin)} target="_blank" rel="noopener" onClick={e => e.stopPropagation()}>LinkedIn </a>}
+            {s.cv_path && <a href="#" onClick={e => { e.preventDefault(); e.stopPropagation(); openCv(s.cv_path) }}>CV</a>}</div>
+        </div>)}
+      </div>
+    </section>)}
     {!shown.length && <p className="mu empty-state">No students match. Add your first student with the button above.</p>}
   </>)
 }
