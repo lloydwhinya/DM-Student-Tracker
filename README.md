@@ -17,7 +17,7 @@ Real sign-up / sign-in, per-student access, role-specific dashboards, file uploa
 - Routes are role-checked in the app, and Supabase row-level security continues to restrict student data access.
 
 ## Deploy
-`npm run build`, then upload `dist/` to Netlify, Vercel or Cloudflare Pages (add the two env vars there).
+`npm run build`, then deploy the `dist/` output to Netlify, Vercel or Cloudflare Pages (add the two env vars there). SPA fallback rules are included so refreshing app routes such as `/student/profile` serves the app entry point.
 
 ## Notes
 - Students see and edit only their own record. Admin notes are in a separate table students can never read.
