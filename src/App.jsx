@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
+import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from './supabase'
 
 const SKILLS = ['SEO','Paid Ads','Social Media','Email Marketing','Content','Analytics','Copywriting','CRO / Web']
@@ -85,9 +85,13 @@ function StudentForm({ initial, isAdmin, onDone }) {
     const { created_at, ...row } = s
     if (!row.start_date) row.start_date = null
     const { error } = await supabase.from('students').upsert(row)
-    if (!error && isAdmin) await supabase.from('staff_notes').upsert({ student_id: s.id, notes })
     setBusy(false)
-    error ? alert(error.message) : onDone(true)
+    if (error) return alert(error.message)
+    if (isAdmin) {
+      const { error: notesError } = await supabase.from('staff_notes').upsert({ student_id: s.id, notes })
+      if (notesError) return alert(notesError.message)
+    }
+    onDone(true)
   }
   const remove = async () => {
     if (!confirm('Delete this student?')) return
@@ -96,7 +100,7 @@ function StudentForm({ initial, isAdmin, onDone }) {
   const F = (k, label, props = {}) => <div><label>{label}</label><input value={s[k] || ''} onChange={e => set(k, e.target.value)} {...props} /></div>
   return (
     <form className="panel" onSubmit={save}>
-      <div className="row sp"><h2>{initial.created_at ? 'Edit profile' : 'Your profile'}</h2>{isAdmin && <button type="button" onClick={() => onDone(false)}>Back</button>}</div>
+      <div className="row sp"><h2>{initial.created_at ? 'Edit profile' : 'Your profile'}</h2><button type="button" onClick={() => onDone(false)}>Back</button></div>
       <div className="row">
         {photoUrl(s.photo_path) ? <img className="av" src={photoUrl(s.photo_path)} alt="" /> : <div className="av">{initials(s.name)}</div>}
         <div style={{ flex: 1 }}><label>Photo</label><input type="file" accept="image/*" onChange={e => upload('photos', 'photo_path', e.target.files[0])} /></div>
@@ -131,10 +135,83 @@ function StudentForm({ initial, isAdmin, onDone }) {
   )
 }
 
-function Admin() {
+async function getStudents() {
+  const { data, error } = await supabase.from('students').select('*').order('name')
+  if (error) throw error
+  return data || []
+}
+
+function AdminDashboard() {
+  const [list, setList] = useState([])
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    getStudents()
+      .then(setList)
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false))
+  }, [])
+  const today = new Date().toISOString().slice(0, 10)
+  const upcoming = list.flatMap(student => (student.interviews || [])
+    .filter(interview => interview.date >= today && interview.outcome !== 'Rejected')
+    .map(interview => ({ ...interview, studentName: student.name })))
+    .sort((a, b) => a.date.localeCompare(b.date))
+  const cohorts = [...new Set(list.map(student => (student.cohort || '').trim()))]
+    .sort((a, b) => {
+      if (!a) return b ? 1 : 0
+      if (!b) return -1
+      const aYear = /^\d{4}$/.test(a)
+      const bYear = /^\d{4}$/.test(b)
+      if (aYear && bYear) return Number(b) - Number(a)
+      if (aYear) return -1
+      if (bYear) return 1
+      return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+    })
+  const employed = list.filter(student => student.status === 'Employed').length
+  if (loading) return <p className="mu">Loading dashboard…</p>
+  if (error) return <p className="err" role="alert">Could not load dashboard: {error}</p>
+  return <>
+    <div className="dashboard-intro">
+      <div><h2>Admin dashboard</h2><p className="mu">A live overview of student progress and upcoming interviews.</p></div>
+      <Link className="dashboard-action" to="/admin/students">Manage students</Link>
+    </div>
+    <div className="stats dashboard-stats">
+      <div className="stat"><b>{list.length}</b><span>Total students</span></div>
+      <div className="stat"><b>{upcoming.length}</b><span>Upcoming interviews</span></div>
+      <div className="stat"><b>{employed}</b><span>Employed</span></div>
+      <div className="stat"><b>{list.length ? `${Math.round(employed / list.length * 100)}%` : '–'}</b><span>Employment rate</span></div>
+    </div>
+    <div className="dashboard-columns">
+      <section className="dashboard-panel">
+        <h3>Students by status</h3>
+        <div className="dashboard-list">
+          {STATUSES.map(status => <div className="dashboard-list-row" key={status}><span>{status}</span><b>{list.filter(student => student.status === status).length}</b></div>)}
+        </div>
+      </section>
+      <section className="dashboard-panel">
+        <h3>Students by cohort</h3>
+        {cohorts.length ? <div className="dashboard-list">
+          {cohorts.map(cohort => <div className="dashboard-list-row" key={cohort || 'unassigned'}><span>{cohort ? `${cohort} Cohort` : 'Cohort not set'}</span><b>{list.filter(student => (student.cohort || '').trim() === cohort).length}</b></div>)}
+        </div> : <p className="mu">No cohort information has been added yet.</p>}
+      </section>
+      <section className="dashboard-panel dashboard-interviews">
+        <h3>Upcoming interviews</h3>
+        {upcoming.length ? <div className="dashboard-list">
+          {upcoming.slice(0, 6).map((interview, index) => <div className="interview-row" key={`${interview.studentName}-${interview.date}-${index}`}>
+            <div><b>{interview.studentName}</b><span>{interview.company || 'Interview'}{interview.role ? ` · ${interview.role}` : ''}</span></div>
+            <time dateTime={interview.date}>{interview.date}</time>
+          </div>)}
+        </div> : <p className="mu">No upcoming interviews recorded.</p>}
+      </section>
+    </div>
+  </>
+}
+
+function AdminManagement() {
   const [list, setList] = useState([]); const [q, setQ] = useState(''); const [fs, setFs] = useState(''); const [fc, setFc] = useState('')
   const [editing, setEditing] = useState(null)
-  const load = () => supabase.from('students').select('*').order('name').then(r => setList(r.data || []))
+  const [error, setError] = useState('')
+  const load = () => getStudents().then(setList).catch(e => setError(e.message))
   useEffect(() => { load() }, [])
   if (editing) return <StudentForm initial={editing} isAdmin onDone={d => { setEditing(null); d && load() }} />
   const cohortOf = s => (s.cohort || '').trim()
@@ -162,6 +239,11 @@ function Admin() {
   })
   const shownGroups = [...groups.entries()].sort(([a], [b]) => compareCohorts(a, b))
   return (<>
+    <div className="dashboard-intro">
+      <div><h2>Manage students</h2><p className="mu">Search, filter, add, and update student records.</p></div>
+      <Link className="dashboard-action" to="/admin">Back to dashboard</Link>
+    </div>
+    {error && <p className="err" role="alert">Could not load students: {error}</p>}
     <div className="stats">{[[list.length, 'Students'], [list.filter(s => s.status === 'Interviewing').length, 'Interviewing'], [upcoming, 'Upcoming interviews'], [emp, 'Employed'], [ready ? Math.round(emp / ready * 100) + '%' : '–', 'Placement rate']].map(([n, l]) => <div className="stat" key={l}><b>{n}</b><span>{l}</span></div>)}</div>
     <div className="row admin-toolbar"><input style={{ flex: 1, minWidth: 180 }} placeholder="Search name, skill, employer, cohort" value={q} onChange={e => setQ(e.target.value)} />
       <select style={{ width: 'auto' }} value={fs} onChange={e => setFs(e.target.value)}><option value="">All statuses</option>{STATUSES.map(x => <option key={x}>{x}</option>)}</select>
@@ -186,13 +268,56 @@ function Admin() {
   </>)
 }
 
-function Student({ user }) {
-  const [rec, setRec] = useState(null); const [saved, setSaved] = useState(false)
+function Student({ user, editProfile = false }) {
+  const [rec, setRec] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const navigate = useNavigate()
+  const location = useLocation()
   const load = () => supabase.from('students').select('*').eq('user_id', user.id).maybeSingle()
-    .then(r => setRec(r.data || { id: crypto.randomUUID(), user_id: user.id, email: user.email }))
-  useEffect(() => { load() }, [])
-  if (!rec) return <p className="mu">Loading…</p>
-  return <>{saved && <div className="ok">Saved.</div>}<StudentForm key={rec.id + saved} initial={rec} onDone={() => { setSaved(true); load() }} /></>
+    .then(r => {
+      if (r.error) throw r.error
+      setRec(r.data || { id: crypto.randomUUID(), user_id: user.id, email: user.email })
+    })
+  useEffect(() => {
+    load().catch(e => setError(e.message)).finally(() => setLoading(false))
+  }, [user.id])
+  if (loading) return <p className="mu">Loading your dashboard…</p>
+  if (error) return <p className="err" role="alert">Could not load your profile: {error}</p>
+  if (editProfile) return <StudentForm key={rec.id} initial={rec} onDone={saved => {
+    if (saved) navigate('/student', { state: { profileSaved: true } })
+    else navigate('/student')
+  }} />
+  const missing = [
+    !rec.name?.trim() && 'name',
+    !rec.cohort?.trim() && 'cohort',
+    !rec.goal?.trim() && 'career goal',
+    !rec.skills?.length && 'skills',
+  ].filter(Boolean)
+  return <>
+    {location.state?.profileSaved && <div className="success-banner" role="status">Your profile was saved successfully.</div>}
+    <div className="dashboard-intro">
+      <div><h2>Student dashboard</h2><p className="mu">Your profile and career progress at a glance.</p></div>
+      <Link className="dashboard-action" to="/student/profile">My profile</Link>
+    </div>
+    {missing.length > 0 && <section className="profile-prompt">
+      <div><h3>Complete your profile</h3><p>Add your {missing.join(', ')} to give your profile a fuller picture.</p></div>
+      <Link className="dashboard-action" to="/student/profile">Finish profile</Link>
+    </section>}
+    <section className="student-overview">
+      <div className="student-overview-heading">
+        {photoUrl(rec.photo_path) ? <img className="av" src={photoUrl(rec.photo_path)} alt="" /> : <div className="av">{initials(rec.name)}</div>}
+        <div><h2>{rec.name || 'Welcome'}</h2><span className={`tag status-tag status-${(rec.status || 'Enrolled').toLowerCase().replace(/[^a-z]+/g, '-')}`}>{rec.status || 'Enrolled'}</span></div>
+      </div>
+      <div className="dashboard-detail-grid">
+        <div><span className="detail-label">Cohort</span><b>{rec.cohort || 'Not set'}</b></div>
+        <div><span className="detail-label">Career goal</span><b>{rec.goal || 'Not set'}</b></div>
+        <div className="student-skills"><span className="detail-label">Skills</span><div>{rec.skills?.length ? rec.skills.map(skill => <span className="tag" key={skill}>{skill}</span>) : <span className="mu">No skills added yet.</span>}</div></div>
+        <div><span className="detail-label">Portfolio</span>{rec.portfolio ? <a className="card-link" href={link(rec.portfolio)} target="_blank" rel="noopener noreferrer">View portfolio</a> : <span className="mu">Not added yet</span>}</div>
+      </div>
+    </section>
+    <p className="student-profile-link"><Link to="/student/profile">Update your profile</Link></p>
+  </>
 }
 
 export default function App() {
@@ -218,9 +343,13 @@ export default function App() {
         <nav className="view-nav" aria-label="Main navigation">
           {role === 'admin' ? <>
             <span className="nav-heading">Workspace</span>
-            <NavLink to="/admin">Admin</NavLink>
-            <NavLink to="/student">Student view</NavLink>
-          </> : <NavLink to="/student">My profile</NavLink>}
+            <NavLink end to="/admin">Dashboard</NavLink>
+            <NavLink to="/admin/students">Manage students</NavLink>
+          </> : <>
+            <span className="nav-heading">Workspace</span>
+            <NavLink end to="/student">Dashboard</NavLink>
+            <NavLink to="/student/profile">My profile</NavLink>
+          </>}
         </nav>
         <div className="sidebar-footer">
           <span className="sidebar-email">{session.user.email}</span>
@@ -231,8 +360,10 @@ export default function App() {
         <header className="page-heading"><h1>Student Tracker</h1></header>
         {role === null ? <p className="mu">Loading…</p> : <Routes location={location}>
           <Route path="/" element={<Navigate to={homePath} replace />} />
-          <Route path="/admin" element={role === 'admin' ? <Admin /> : <Navigate to="/student" replace />} />
-          <Route path="/student" element={<Student user={session.user} />} />
+          <Route path="/admin" element={role === 'admin' ? <AdminDashboard /> : <Navigate to="/student" replace />} />
+          <Route path="/admin/students" element={role === 'admin' ? <AdminManagement /> : <Navigate to="/student" replace />} />
+          <Route path="/student" element={role === 'student' ? <Student user={session.user} /> : <Navigate to="/admin" replace />} />
+          <Route path="/student/profile" element={role === 'student' ? <Student user={session.user} editProfile /> : <Navigate to="/admin" replace />} />
           <Route path="*" element={<Navigate to={homePath} replace />} />
         </Routes>}
       </main>

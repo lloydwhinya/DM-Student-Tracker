@@ -66,6 +66,39 @@ label{display:block;margin:10px 0 4px;color:var(--ink);font-size:13px;font-weigh
 .stat:nth-child(2){border-top-color:#4e70d8}.stat:nth-child(3){border-top-color:var(--gold)}.stat:nth-child(4){border-top-color:#329674}.stat:nth-child(5){border-top-color:#23806f}
 .stat b{display:block;color:var(--heading);font-family:"Outfit",sans-serif;font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
 .stat span{display:block;margin-top:5px;color:var(--muted);font-size:12px;font-weight:600}
+.dashboard-intro{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:18px}
+.dashboard-intro h2{margin:0}
+.dashboard-intro p{margin:5px 0 0}
+.dashboard-action{display:inline-flex;min-height:40px;align-items:center;justify-content:center;padding:8px 15px;border:1px solid var(--ac);border-radius:8px;background:var(--ac);color:#fff;font-weight:700;text-decoration:none}
+.dashboard-action:hover{background:var(--ac-dark);border-color:var(--ac-dark)}
+.dashboard-stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+.dashboard-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.dashboard-panel,.student-overview{min-width:0;padding:20px;border:1px solid var(--line);border-radius:10px;background:#fff;box-shadow:var(--shadow)}
+.dashboard-panel h3{margin:0 0 12px}
+.dashboard-list{display:grid}
+.dashboard-list-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line)}
+.dashboard-list-row:last-child{border-bottom:0}
+.dashboard-list-row b{color:var(--heading);font-variant-numeric:tabular-nums}
+.dashboard-interviews{grid-column:1/-1}
+.interview-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 2px;border-bottom:1px solid var(--line)}
+.interview-row:last-child{border-bottom:0}
+.interview-row div{display:grid;min-width:0}
+.interview-row span{overflow:hidden;color:var(--muted);font-size:13px;text-overflow:ellipsis;white-space:nowrap}
+.interview-row time{flex:none;color:var(--heading);font-size:13px;font-weight:700}
+.success-banner{margin-bottom:18px;padding:12px 16px;border:1px solid #b9dfcf;border-radius:8px;background:var(--teal-soft);color:#17623a;font-weight:700}
+.profile-prompt{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:18px 0;padding:17px 20px;border:1px solid #b8c8ee;border-left:4px solid var(--ac);border-radius:9px;background:var(--blue-soft)}
+.profile-prompt h3{margin:0 0 5px;padding:0;border:0;font-size:18px}
+.profile-prompt p{margin:0;color:var(--muted);font-size:13px}
+.student-overview{margin-top:18px}
+.student-overview-heading{display:flex;align-items:center;gap:14px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+.student-overview-heading h2{margin:0 0 3px}
+.dashboard-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;padding-top:18px}
+.dashboard-detail-grid>div{min-width:0}
+.dashboard-detail-grid>div:not(.student-skills){display:grid;align-content:start;gap:6px}
+.detail-label{color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.student-skills>div{margin-top:4px}
+.student-profile-link{margin-top:18px}
+.student-profile-link a{color:var(--ac);font-weight:700}
 .admin-toolbar{margin-bottom:18px}
 .admin-toolbar>input{flex:1;min-width:180px;width:auto}
 .admin-toolbar>select{width:auto;min-width:140px}
@@ -108,6 +141,12 @@ label{display:block;margin:10px 0 4px;color:var(--ink);font-size:13px;font-weigh
 	.page-heading{margin-bottom:18px}
 	.page-heading h1{font-size:29px}
 	.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+	.dashboard-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+	.dashboard-columns{grid-template-columns:minmax(0,1fr);gap:12px}
+	.dashboard-interviews{grid-column:auto}
+	.dashboard-panel,.student-overview{padding:16px}
+	.dashboard-detail-grid{grid-template-columns:minmax(0,1fr);gap:15px}
+	.dashboard-action{width:100%}
 	.admin-toolbar>input{flex-basis:100%}
 	.admin-toolbar>select{flex:1}
 	.grid{grid-template-columns:minmax(0,1fr);gap:12px}
