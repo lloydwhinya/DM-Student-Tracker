@@ -63,7 +63,7 @@ function Auth() {
 }
 
 function StudentForm({ initial, isAdmin, onDone }) {
-  const [s, setS] = useState({ interviews: [], skills: [], status: 'Enrolled', ...initial })
+  const [s, setS] = useState({ interviews: [], skills: [], status: 'Enrolled', cohort_visible: false, ...initial })
   const [notes, setNotes] = useState('')
   const [busy, setBusy] = useState(false)
   const set = (k, v) => setS(p => ({ ...p, [k]: v }))
@@ -112,6 +112,10 @@ function StudentForm({ initial, isAdmin, onDone }) {
       {F('tools', 'Tools known (GA4, Meta Ads, Semrush…)')}{F('certs', 'Certifications')}
       <h3>Portfolio and CV</h3>
       <div className="two">{F('portfolio', 'Portfolio link')}{F('linkedin', 'LinkedIn')}</div>
+      {!isAdmin && <div className="visibility-setting">
+        <label><input type="checkbox" checked={Boolean(s.cohort_visible)} onChange={e => set('cohort_visible', e.target.checked)} /> Show my name and portfolio link to cohort peers</label>
+        <p className="mu">Off by default. When enabled, only your name and portfolio link are shared with students in your cohort. You will not appear to peers until you add a portfolio link; all other profile details stay private.</p>
+      </div>}
       <label>CV (PDF) {s.cv_path && <button type="button" onClick={() => openCv(s.cv_path)} style={{ padding: '2px 8px' }}>Open current CV</button>}</label>
       <input type="file" accept="application/pdf" onChange={e => upload('cvs', 'cv_path', e.target.files[0])} />
       <h3>Employment</h3>
@@ -139,6 +143,57 @@ async function getStudents() {
   const { data, error } = await supabase.from('students').select('*').order('name')
   if (error) throw error
   return data || []
+}
+
+function StudentCommunity() {
+  const [community, setCommunity] = useState(null)
+  const [selected, setSelected] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  useEffect(() => {
+    supabase.rpc('get_student_cohort_community')
+      .then(({ data, error: rpcError }) => {
+        if (rpcError) throw rpcError
+        setCommunity(data)
+      })
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false))
+  }, [])
+  if (loading) return <p className="mu">Loading your cohort community…</p>
+  if (error) return <p className="err" role="alert">Could not load your cohort community: {error}</p>
+  const stats = [
+    [community.total_students, 'Students'],
+    [community.enrolled_students, 'Enrolled'],
+    [community.employed_students, 'Employed'],
+  ]
+  return <>
+    <div className="dashboard-intro">
+      <div><h2>Cohort community</h2><p className="mu">A read-only look at your cohort and peers who chose to share a portfolio.</p></div>
+      <Link className="dashboard-action" to="/student">Back to dashboard</Link>
+    </div>
+    {community.has_cohort ? <>
+      <div className="stats community-stats">
+        {stats.map(([count, label]) => <div className="stat" key={label}><b>{count}</b><span>{label}</span></div>)}
+      </div>
+      <section className="dashboard-panel community-panel">
+        <h3>Peer portfolios</h3>
+        <p className="mu">Only each peer’s name and portfolio link are shown. Peers without a portfolio link are not listed.</p>
+        {community.peers.length ? <div className="community-peers">
+          {community.peers.map((peer, index) => <article className="community-peer" key={`${peer.name}-${index}`}>
+            <b>{peer.name}</b>
+            <button type="button" onClick={() => setSelected(peer)}>View profile</button>
+          </article>)}
+        </div> : <p className="mu">No peers have opted to share a portfolio yet.</p>}
+      </section>
+    </> : <section className="empty-state"><b>Your cohort is not set yet.</b><p>Update your profile with your cohort to see its community statistics and shared portfolios.</p><Link to="/student/profile">Update your profile</Link></section>}
+    {selected && <div className="community-modal-backdrop" onClick={() => setSelected(null)}>
+      <section className="community-modal" role="dialog" aria-modal="true" aria-labelledby="peer-profile-title" onClick={e => e.stopPropagation()}>
+        <div className="row sp"><h2 id="peer-profile-title">Peer profile</h2><button type="button" aria-label="Close profile" onClick={() => setSelected(null)}>Close</button></div>
+        <p><b>{selected.name}</b></p>
+        <a className="card-link" href={link(selected.portfolio)} target="_blank" rel="noopener noreferrer">Open portfolio</a>
+      </section>
+    </div>}
+  </>
 }
 
 function AdminDashboard() {
@@ -298,7 +353,7 @@ function Student({ user, editProfile = false }) {
     {location.state?.profileSaved && <div className="success-banner" role="status">Your profile was saved successfully.</div>}
     <div className="dashboard-intro">
       <div><h2>Student dashboard</h2><p className="mu">Your profile and career progress at a glance.</p></div>
-      <Link className="dashboard-action" to="/student/profile">My profile</Link>
+      <div className="row"><Link className="dashboard-action" to="/student/profile">My profile</Link><Link className="dashboard-action" to="/student/community">Cohort community</Link></div>
     </div>
     {missing.length > 0 && <section className="profile-prompt">
       <div><h3>Complete your profile</h3><p>Add your {missing.join(', ')} to give your profile a fuller picture.</p></div>
@@ -348,6 +403,7 @@ export default function App() {
           </> : <>
             <span className="nav-heading">Workspace</span>
             <NavLink end to="/student">Dashboard</NavLink>
+            <NavLink to="/student/community">Cohort community</NavLink>
             <NavLink to="/student/profile">My profile</NavLink>
           </>}
         </nav>
@@ -363,6 +419,7 @@ export default function App() {
           <Route path="/admin" element={role === 'admin' ? <AdminDashboard /> : <Navigate to="/student" replace />} />
           <Route path="/admin/students" element={role === 'admin' ? <AdminManagement /> : <Navigate to="/student" replace />} />
           <Route path="/student" element={role === 'student' ? <Student user={session.user} /> : <Navigate to="/admin" replace />} />
+          <Route path="/student/community" element={role === 'student' ? <StudentCommunity /> : <Navigate to="/admin" replace />} />
           <Route path="/student/profile" element={role === 'student' ? <Student user={session.user} editProfile /> : <Navigate to="/admin" replace />} />
           <Route path="*" element={<Navigate to={homePath} replace />} />
         </Routes>}

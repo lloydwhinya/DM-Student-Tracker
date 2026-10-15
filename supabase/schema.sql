@@ -23,7 +23,8 @@ create table students (
  name text not null, cohort text, email text, phone text,
  status text default 'Enrolled', goal text,
  skills text[] default '{}', tools text, certs text,
- portfolio text, linkedin text, photo_path text, cv_path text,
+ portfolio text, cohort_visible boolean not null default false,
+ linkedin text, photo_path text, cv_path text,
  employer text, job_title text, start_date date, clients text,
  interviews jsonb default '[]', created_at timestamptz default now());
 create table staff_notes (student_id uuid primary key references students on delete cascade, notes text);

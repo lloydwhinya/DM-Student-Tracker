@@ -99,6 +99,18 @@ label{display:block;margin:10px 0 4px;color:var(--ink);font-size:13px;font-weigh
 .student-skills>div{margin-top:4px}
 .student-profile-link{margin-top:18px}
 .student-profile-link a{color:var(--ac);font-weight:700}
+.community-stats{grid-template-columns:repeat(3,minmax(0,1fr));max-width:850px}
+.community-panel{margin-top:18px}
+.community-peers{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:12px;margin-top:16px}
+.community-peer{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;padding:14px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.community-peer b{overflow-wrap:anywhere;color:var(--heading)}
+.community-modal-backdrop{position:fixed;z-index:10;inset:0;display:grid;place-items:center;padding:20px;background:rgba(20,35,65,.48)}
+.community-modal{width:min(100%,440px);padding:22px;border:1px solid var(--line);border-radius:10px;background:#fff;box-shadow:0 12px 40px rgba(20,35,65,.2)}
+.community-modal h2{font-size:21px}
+.visibility-setting{margin:14px 0;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:#f8faff}
+.visibility-setting label{display:flex;align-items:flex-start;gap:8px;margin:0;font-size:14px}
+.visibility-setting input{width:auto;margin-top:5px;accent-color:var(--ac)}
+.visibility-setting p{margin:6px 0 0}
 .admin-toolbar{margin-bottom:18px}
 .admin-toolbar>input{flex:1;min-width:180px;width:auto}
 .admin-toolbar>select{width:auto;min-width:140px}
@@ -142,6 +154,7 @@ label{display:block;margin:10px 0 4px;color:var(--ink);font-size:13px;font-weigh
 	.page-heading h1{font-size:29px}
 	.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 	.dashboard-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+	.community-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
 	.dashboard-columns{grid-template-columns:minmax(0,1fr);gap:12px}
 	.dashboard-interviews{grid-column:auto}
 	.dashboard-panel,.student-overview{padding:16px}
