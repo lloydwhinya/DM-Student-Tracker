@@ -63,7 +63,7 @@ function Auth() {
 }
 
 function StudentForm({ initial, isAdmin, onDone }) {
-  const [s, setS] = useState({ interviews: [], skills: [], status: 'Enrolled', cohort_visible: false, ...initial })
+  const [s, setS] = useState({ interviews: [], skills: [], status: 'Enrolled', community_published: false, ...initial })
   const [notes, setNotes] = useState('')
   const [busy, setBusy] = useState(false)
   const set = (k, v) => setS(p => ({ ...p, [k]: v }))
@@ -83,6 +83,8 @@ function StudentForm({ initial, isAdmin, onDone }) {
   const save = async e => {
     e.preventDefault(); setBusy(true)
     const { created_at, ...row } = s
+    delete row.cohort_visible
+    if (!isAdmin) delete row.community_published
     if (!row.start_date) row.start_date = null
     const { error } = await supabase.from('students').upsert(row)
     setBusy(false)
@@ -112,10 +114,10 @@ function StudentForm({ initial, isAdmin, onDone }) {
       {F('tools', 'Tools known (GA4, Meta Ads, Semrush…)')}{F('certs', 'Certifications')}
       <h3>Portfolio and CV</h3>
       <div className="two">{F('portfolio', 'Portfolio link')}{F('linkedin', 'LinkedIn')}</div>
-      {!isAdmin && <div className="visibility-setting">
-        <label><input type="checkbox" checked={Boolean(s.cohort_visible)} onChange={e => set('cohort_visible', e.target.checked)} /> Show my name and portfolio link to cohort peers</label>
-        <p className="mu">Off by default. When enabled, only your name and portfolio link are shared with students in your cohort. You will not appear to peers until you add a portfolio link; all other profile details stay private.</p>
-      </div>}
+      {isAdmin ? <div className="visibility-setting">
+        <label><input type="checkbox" checked={Boolean(s.community_published)} onChange={e => set('community_published', e.target.checked)} /> Publish this student’s name and portfolio to their cohort community</label>
+        <p className="mu">Only the name and portfolio link are shared. Publication takes effect when you save, and requires a cohort and portfolio link.</p>
+      </div> : <p className="mu">Community publication is managed by an admin. Only your name and portfolio link can be shared with your cohort.</p>}
       <label>CV (PDF) {s.cv_path && <button type="button" onClick={() => openCv(s.cv_path)} style={{ padding: '2px 8px' }}>Open current CV</button>}</label>
       <input type="file" accept="application/pdf" onChange={e => upload('cvs', 'cv_path', e.target.files[0])} />
       <h3>Employment</h3>
@@ -168,7 +170,7 @@ function StudentCommunity() {
   ]
   return <>
     <div className="dashboard-intro">
-      <div><h2>Cohort community</h2><p className="mu">A read-only look at your cohort and peers who chose to share a portfolio.</p></div>
+      <div><h2>Cohort community</h2><p className="mu">A read-only look at your cohort and portfolios approved for sharing by an admin.</p></div>
       <Link className="dashboard-action" to="/student">Back to dashboard</Link>
     </div>
     {community.has_cohort ? <>
@@ -310,6 +312,7 @@ function AdminManagement() {
         {students.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })).map(s => <div className="card" key={s.id} onClick={() => setEditing(s)}>
           <div className="row">{photoUrl(s.photo_path) ? <img className="av" src={photoUrl(s.photo_path)} alt="" /> : <div className="av">{initials(s.name)}</div>}
             <div><b>{s.name}</b><div className="mu">{s.email}</div></div></div>
+          <span className={`tag ${s.community_published ? 'community-published' : 'community-unpublished'}`}>{s.community_published ? 'Published to cohort' : 'Not published'}</span>
           <span className={`tag status-tag status-${s.status.toLowerCase().replace(/[^a-z]+/g, '-')}`}>{s.status}</span>{(s.skills || []).map(k => <span className="tag" key={k}>{k}</span>)}
           {s.employer && <div className="mu" style={{ marginTop: 8 }}>{s.job_title} {s.job_title && 'at'} {s.employer}</div>}
           <div className="mu card-links" style={{ marginTop: 6 }}>

@@ -107,7 +107,7 @@ label{display:block;margin:10px 0 4px;color:var(--ink);font-size:13px;font-weigh
 .community-modal-backdrop{position:fixed;z-index:10;inset:0;display:grid;place-items:center;padding:20px;background:rgba(20,35,65,.48)}
 .community-modal{width:min(100%,440px);padding:22px;border:1px solid var(--line);border-radius:10px;background:#fff;box-shadow:0 12px 40px rgba(20,35,65,.2)}
 .community-modal h2{font-size:21px}
-.visibility-setting{margin:14px 0;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:#f8faff}
+.visibility-setting{margin:14px 0;padding:12px 14px;border:1px solid #b8c8ee;border-left:4px solid var(--ac);border-radius:8px;background:#f8faff}
 .visibility-setting label{display:flex;align-items:flex-start;gap:8px;margin:0;font-size:14px}
 .visibility-setting input{width:auto;margin-top:5px;accent-color:var(--ac)}
 .visibility-setting p{margin:6px 0 0}
@@ -127,6 +127,7 @@ label{display:block;margin:10px 0 4px;color:var(--ink);font-size:13px;font-weigh
 .card-link:hover{background:var(--ac);color:#fff}.card-link:focus-visible{outline:3px solid #8eabff;outline-offset:2px}
 .av{display:grid;width:52px;height:52px;flex:none;place-items:center;border:2px solid #d9e2f6;border-radius:50%;background:var(--blue-soft);color:#2149b8;font-weight:800;object-fit:cover}
 .tag{display:inline-block;margin:6px 4px 0 0;padding:3px 9px;border:1px solid transparent;border-radius:5px;background:var(--blue-soft);color:#294b9a;font-size:11px;font-weight:700}
+.community-published{background:var(--teal-soft);color:#17623a}.community-unpublished{background:#edf1f8;color:#34435b}
 .status-tag{border-color:var(--ink)}
 .status-enrolled{background:#edf1f8;color:#34435b}.status-job-ready{background:#e4f3e9;color:#21603b}.status-interviewing{background:#e7edff;color:#2448a0}.status-employed{background:#dff3e6;color:#17623a}.status-freelancing{background:#fff0df;color:#864b0d}.status-alumni{background:#e8f2ef;color:#266457}
 .mu{color:var(--muted);font-size:13px}

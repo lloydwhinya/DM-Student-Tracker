@@ -1,7 +1,28 @@
 -- Run this in Supabase SQL Editor after schema.sql.
--- Safe to run on existing projects; profiles remain private under the existing RLS policies.
+-- Existing profiles default to unpublished; the former student-managed preference is ignored.
 alter table public.students
-  add column if not exists cohort_visible boolean not null default false;
+  add column if not exists community_published boolean not null default false;
+
+create or replace function public.prevent_student_community_publish()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if auth.uid() is not null and not public.is_admin() then
+    if (tg_op = 'INSERT' and new.community_published)
+       or (tg_op = 'UPDATE' and new.community_published is distinct from old.community_published) then
+      raise exception 'Only admins can change cohort community publication';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists students_admin_controls_community_publish on public.students;
+create trigger students_admin_controls_community_publish
+before insert or update of community_published on public.students
+for each row execute function public.prevent_student_community_publish();
 
 create or replace function public.get_student_cohort_community()
 returns jsonb
@@ -47,8 +68,9 @@ begin
     into v_peers
     from public.students
     where cohort = v_cohort
-      and user_id <> auth.uid()
-      and cohort_visible
+      and user_id is distinct from auth.uid()
+      and community_published
+      and nullif(btrim(name), '') is not null
       and nullif(btrim(portfolio), '') is not null;
   end if;
 

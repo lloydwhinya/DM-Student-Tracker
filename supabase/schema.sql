@@ -23,7 +23,7 @@ create table students (
  name text not null, cohort text, email text, phone text,
  status text default 'Enrolled', goal text,
  skills text[] default '{}', tools text, certs text,
- portfolio text, cohort_visible boolean not null default false,
+ portfolio text, community_published boolean not null default false,
  linkedin text, photo_path text, cv_path text,
  employer text, job_title text, start_date date, clients text,
  interviews jsonb default '[]', created_at timestamptz default now());
@@ -38,6 +38,25 @@ create policy "student reads own" on students for select using (user_id=auth.uid
 create policy "student creates own" on students for insert with check (user_id=auth.uid());
 create policy "student updates own" on students for update using (user_id=auth.uid()) with check (user_id=auth.uid());
 create policy "admin notes" on staff_notes for all using (is_admin()) with check (is_admin());
+
+create function public.prevent_student_community_publish()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+ if auth.uid() is not null and not public.is_admin() then
+  if (tg_op = 'INSERT' and new.community_published)
+     or (tg_op = 'UPDATE' and new.community_published is distinct from old.community_published) then
+   raise exception 'Only admins can change cohort community publication';
+  end if;
+ end if;
+ return new;
+end;
+$$;
+create trigger students_admin_controls_community_publish
+before insert or update of community_published on students
+for each row execute function public.prevent_student_community_publish();
 
 -- Files: photos (public) and cvs (private). Files live in a folder named after the student row id.
 insert into storage.buckets (id,name,public) values ('photos','photos',true),('cvs','cvs',false);
