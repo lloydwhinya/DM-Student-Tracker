@@ -137,6 +137,13 @@ label{display:block;margin:10px 0 4px;color:var(--ink);font-size:13px;font-weigh
 .chk{display:flex;flex-wrap:wrap;gap:6px 12px}.chk label{display:inline-flex;align-items:center;gap:6px;margin:4px 0;color:var(--ink);font-size:13px;font-weight:500}.chk input{width:auto;accent-color:var(--ac)}
 .iv{display:grid;grid-template-columns:1.2fr 1.2fr 1fr 1fr auto;gap:7px;margin-bottom:8px}
 .empty-state{max-width:620px;margin:24px auto;padding:20px 22px;border:1px dashed #bdc9db;border-left:4px solid var(--ac);border-radius:8px;background:#fff;color:var(--muted)}
+.instructor-invite,.instructor-list{margin:18px 0}
+.instructor-invite h3,.instructor-list h3{margin-top:0}
+.instructor-invite .row{align-items:flex-end}
+.instructor-invite .row>input{flex:1;width:auto;min-width:180px}
+.instructor-invite>p{margin-bottom:0}
+.instructor-list .dashboard-list-row>div{min-width:0;overflow-wrap:anywhere}
+.instructor-list .dashboard-list-row button{flex:none}
 @media(max-width:900px){.app-layout{grid-template-columns:210px minmax(0,1fr)}.sidebar{padding:24px 16px}.stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:560px){
 	.app-layout{grid-template-columns:minmax(0,1fr)}
@@ -146,6 +153,7 @@ label{display:block;margin:10px 0 4px;color:var(--ink);font-size:13px;font-weigh
 	.sidebar-caption{display:none}
 	.sidebar .view-nav{flex-direction:row;margin-top:14px}
 	.sidebar .view-nav a{flex:1;padding:9px 10px;text-align:center}
+	.sidebar .view-nav a{font-size:12px}
 	.nav-heading{display:none}
 	.sidebar-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding-top:12px}
 	.sidebar-email{font-size:11px}
