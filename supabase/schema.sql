@@ -115,7 +115,7 @@ alter table public.staff_notes enable row level security;
 
 create policy "read own profile or owner reads all"
 on public.profiles for select
-using ((id = auth.uid() and public.is_instructor()) or public.is_owner());
+using (id = auth.uid() or public.is_owner());
 
 create policy "instructors read students"
 on public.students for select
@@ -143,6 +143,11 @@ create policy "instructors access student files"
 on storage.objects for all to authenticated
 using (bucket_id in ('photos', 'cvs') and public.is_instructor())
 with check (bucket_id in ('photos', 'cvs') and public.is_instructor());
+
+-- Backfill profile for the existing owner account (if missing)
+insert into public.profiles (id, role, active)
+select id, 'owner', true from auth.users where lower(email) = 'lloydwhinya98@gmail.com'
+on conflict (id) do update set role = 'owner', active = true;
 
 -- Existing student rows and auth.users are retained. The auth account link remains
 -- available to instructors, but student roles have no student-table or file policies.
